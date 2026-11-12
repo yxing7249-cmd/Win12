@@ -58,13 +58,16 @@ jobs:
         run: |
           echo "sdk.dir=$ANDROID_HOME" > local.properties
 
-      - name: Generate Gradle Wrapper
+      - name: Setup Gradle Wrapper (download Gradle 8.4)
         run: |
-          gradle wrapper --gradle-version 8.4
+          # Download specific Gradle 8.4 to avoid system Gradle 9.x incompatibility
+          curl -L -o gradle-8.4-bin.zip https://services.gradle.org/distributions/gradle-8.4-bin.zip
+          unzip -q gradle-8.4-bin.zip
+          ./gradle-8.4/bin/gradle wrapper --gradle-version 8.4
+          chmod +x ./gradlew
 
       - name: Build Debug APK
         run: |
-          chmod +x ./gradlew
           ./gradlew assembleDebug --stacktrace
 
       - name: Upload APK Artifact
