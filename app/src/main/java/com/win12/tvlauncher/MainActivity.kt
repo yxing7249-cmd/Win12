@@ -1,7 +1,6 @@
 package com.win12.tvlauncher
 
 import android.content.Intent
-import android.content.pm.ResolveInfo
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
@@ -12,8 +11,6 @@ import android.provider.Settings
 import android.view.*
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
-import java.text.SimpleDateFormat
-import java.util.*
 
 class MainActivity : AppCompatActivity() {
 
@@ -29,12 +26,9 @@ class MainActivity : AppCompatActivity() {
     private var currentThemeIndex = 0
     private val handler = Handler(Looper.getMainLooper())
 
-    // Cursor movement
     private var cursorX = 960f
     private var cursorY = 540f
     private var moveSpeed = 12f
-    private var longPressHandler: Handler? = null
-    private var longPressRunnable: Runnable? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -51,7 +45,6 @@ class MainActivity : AppCompatActivity() {
 
         ThemeManager.applyTheme(rootContainer, ThemeManager.themes[currentThemeIndex])
 
-        // Widgets
         widgetsView = DesktopWidgetsView(this).apply {
             layoutParams = FrameLayout.LayoutParams(320, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
                 gravity = Gravity.TOP or Gravity.START
@@ -60,13 +53,9 @@ class MainActivity : AppCompatActivity() {
         }
         rootContainer.addView(widgetsView)
 
-        // Taskbar (Dock)
         buildTaskbar()
-
-        // Start Menu (hidden by default)
         buildStartMenu()
 
-        // Cursor Overlay
         cursorOverlay = CursorOverlayView(this).apply {
             layoutParams = FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
@@ -76,16 +65,15 @@ class MainActivity : AppCompatActivity() {
         rootContainer.addView(cursorOverlay)
         cursorOverlay.updatePosition(cursorX, cursorY)
 
-        // Lock Screen
-        val lockManager = LockScreenManager(this) {
-            // unlocked
-        }
-        rootContainer.addView(lockManager.lockOverlay, FrameLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.MATCH_PARENT
-        ))
+        val lockManager = LockScreenManager(this) {}
+        rootContainer.addView(
+            lockManager.lockOverlay,
+            FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
+        )
 
-        // Key handling for D-pad
         rootContainer.isFocusable = true
         rootContainer.isFocusableInTouchMode = true
         rootContainer.requestFocus()
@@ -110,25 +98,12 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        val startBtn = makeDockButton("🔥", "开始") {
-            toggleStartMenu()
-        }
-        taskbar.addView(startBtn)
-
-        val appsBtn = makeDockButton("📱", "应用") {
-            openAppDrawer()
-        }
-        taskbar.addView(appsBtn)
-
-        val themeBtn = makeDockButton("🎨", "主题") {
-            cycleTheme()
-        }
-        taskbar.addView(themeBtn)
-
-        val settingsBtn = makeDockButton("⚙️", "设置") {
+        taskbar.addView(makeDockButton("\uD83D\uDD25", "\u5F00\u59CB") { toggleStartMenu() })
+        taskbar.addView(makeDockButton("\uD83D\uDCF1", "\u5E94\u7528") { openAppDrawer() })
+        taskbar.addView(makeDockButton("\uD83C\uDFA8", "\u4E3B\u9898") { cycleTheme() })
+        taskbar.addView(makeDockButton("\u2699\uFE0F", "\u8BBE\u7F6E") {
             startActivity(Intent(Settings.ACTION_SETTINGS))
-        }
-        taskbar.addView(settingsBtn)
+        })
 
         rootContainer.addView(taskbar)
     }
@@ -169,23 +144,27 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        val title = TextView(this).apply {
-            text = "Win12 开始菜单"
+        startMenu.addView(TextView(this).apply {
+            text = "Win12 \u5F00\u59CB\u83DC\u5355"
             setTextColor(Color.WHITE)
             textSize = 18f
             setPadding(0, 0, 0, 16)
-        }
-        startMenu.addView(title)
+        })
 
         val items = listOf(
-            "📊 桌面小组件" to { Toast.makeText(this, "小组件已在桌面", Toast.LENGTH_SHORT).show() },
-            "🔒 锁屏" to { /* lock again */ },
-            "🌐 浏览器" to { openBrowser() },
-            "📱 所有应用" to { openAppDrawer() },
-            "⚙️ 系统设置" to { startActivity(Intent(Settings.ACTION_SETTINGS)) }
+            "\uD83D\uDCCA \u684C\u9762\u5C0F\u7EC4\u4EF6" to {
+                Toast.makeText(this, "\u5C0F\u7EC4\u4EF6\u5DF2\u5728\u684C\u9762", Toast.LENGTH_SHORT).show()
+            },
+            "\uD83D\uDD12 \u9501\u5C4F" to { },
+            "\uD83C\uDF10 \u6D4F\u89C8\u5668" to { openBrowser() },
+            "\uD83D\uDCF1 \u6240\u6709\u5E94\u7528" to { openAppDrawer() },
+            "\u2699\uFE0F \u7CFB\u7EDF\u8BBE\u7F6E" to {
+                startActivity(Intent(Settings.ACTION_SETTINGS))
+            }
         )
+
         for ((text, action) in items) {
-            val row = TextView(this).apply {
+            startMenu.addView(TextView(this).apply {
                 this.text = text
                 setTextColor(Color.WHITE)
                 textSize = 16f
@@ -202,8 +181,7 @@ class MainActivity : AppCompatActivity() {
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.WRAP_CONTENT
                 ).apply { setMargins(0, 0, 0, 8) }
-            }
-            startMenu.addView(row)
+            })
         }
         rootContainer.addView(startMenu)
     }
@@ -221,10 +199,9 @@ class MainActivity : AppCompatActivity() {
 
     private fun openBrowser() {
         try {
-            val intent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse("https://www.bing.com"))
-            startActivity(intent)
+            startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse("https://www.bing.com")))
         } catch (e: Exception) {
-            Toast.makeText(this, "无法打开浏览器", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "\u65E0\u6CD5\u6253\u5F00\u6D4F\u89C8\u5668", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -235,7 +212,7 @@ class MainActivity : AppCompatActivity() {
         }
         val apps = pm.queryIntentActivities(mainIntent, 0)
         val names = apps.take(12).map { it.loadLabel(pm).toString() }
-        Toast.makeText(this, "应用: ${names.joinToString(", ")}", Toast.LENGTH_LONG).show()
+        Toast.makeText(this, "\u5E94\u7528: ${names.joinToString(", ")}", Toast.LENGTH_LONG).show()
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
@@ -264,7 +241,11 @@ class MainActivity : AppCompatActivity() {
             }
             KeyEvent.KEYCODE_MENU -> {
                 isScrollMode = !isScrollMode
-                Toast.makeText(this, if (isScrollMode) "滚动模式" else "点击模式", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    this,
+                    if (isScrollMode) "\u6EDA\u52A8\u6A21\u5F0F" else "\u70B9\u51FB\u6A21\u5F0F",
+                    Toast.LENGTH_SHORT
+                ).show()
                 return true
             }
             KeyEvent.KEYCODE_BACK -> {
@@ -288,10 +269,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun performClick() {
         cursorOverlay.triggerClickEffect()
-        if (isScrollMode) {
-            // scroll
-            return
-        }
+        if (isScrollMode) return
         simulateTouchDown(cursorX, cursorY)
         handler.postDelayed({
             simulateTouchUp(cursorX, cursorY)
@@ -300,7 +278,9 @@ class MainActivity : AppCompatActivity() {
 
     private fun simulateTouchDown(x: Float, y: Float) {
         downTimeMillis = SystemClock.uptimeMillis()
-        val downEvent = MotionEvent.obtain(downTimeMillis, downTimeMillis, MotionEvent.ACTION_DOWN, x, y, 0)
+        val downEvent = MotionEvent.obtain(
+            downTimeMillis, downTimeMillis, MotionEvent.ACTION_DOWN, x, y, 0
+        )
         rootContainer.dispatchTouchEvent(downEvent)
         downEvent.recycle()
         isDragging = true
@@ -308,23 +288,20 @@ class MainActivity : AppCompatActivity() {
 
     private fun simulateTouchMove(x: Float, y: Float) {
         val moveTime = SystemClock.uptimeMillis()
-        val moveEvent = MotionEvent.obtain(downTimeMillis, moveTime, MotionEvent.ACTION_MOVE, x, y, 0)
+        val moveEvent = MotionEvent.obtain(
+            downTimeMillis, moveTime, MotionEvent.ACTION_MOVE, x, y, 0
+        )
         rootContainer.dispatchTouchEvent(moveEvent)
         moveEvent.recycle()
     }
 
     private fun simulateTouchUp(x: Float, y: Float) {
         val upTime = SystemClock.uptimeMillis()
-        val upEvent = MotionEvent.obtain(downTimeMillis, upTime, MotionEvent.ACTION_UP, x, y, 0)
+        val upEvent = MotionEvent.obtain(
+            downTimeMillis, upTime, MotionEvent.ACTION_UP, x, y, 0
+        )
         rootContainer.dispatchTouchEvent(upEvent)
         upEvent.recycle()
         isDragging = false
-    }
-
-    private fun dispatchScrollEvent(x: Float, y: Float, scrollDelta: Int) {
-        val time = SystemClock.uptimeMillis()
-        val scrollEvent = MotionEvent.obtain(time, time, MotionEvent.ACTION_SCROLL, x, y, 0f, scrollDelta.toFloat(), 0)
-        rootContainer.dispatchTouchEvent(scrollEvent)
-        scrollEvent.recycle()
     }
 }
