@@ -22,13 +22,16 @@ jobs:
           distribution: 'temurin'
 
       - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v3.2.2
+
+      - name: Accept Android licenses
+        run: |
+          yes | sdkmanager --licenses || true
 
       - name: Create minimal resources (ic_launcher, values)
         run: |
           mkdir -p app/src/main/res/mipmap-hdpi
           mkdir -p app/src/main/res/values
-          # Simple 1x1 PNG as placeholder icon (base64)
           echo 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==' | base64 -d > app/src/main/res/mipmap-hdpi/ic_launcher.png
           cat > app/src/main/res/values/strings.xml << 'EOF'
           <resources>
