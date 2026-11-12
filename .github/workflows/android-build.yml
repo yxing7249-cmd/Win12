@@ -22,13 +22,11 @@ jobs:
           distribution: 'temurin'
 
       - name: Setup Android SDK
-        uses: android-actions/setup-android@v3.2.2
+        uses: android-actions/setup-android@v3
+        with:
+          packages: 'platforms;android-34 build-tools;34.0.0 platform-tools'
 
-      - name: Accept Android licenses
-        run: |
-          yes | sdkmanager --licenses || true
-
-      - name: Create minimal resources (ic_launcher, values)
+      - name: Create minimal resources
         run: |
           mkdir -p app/src/main/res/mipmap-hdpi
           mkdir -p app/src/main/res/values
@@ -46,13 +44,18 @@ jobs:
           </resources>
           EOF
 
+      - name: Create local.properties
+        run: |
+          echo "sdk.dir=$ANDROID_HOME" > local.properties
+
       - name: Generate Gradle Wrapper
         run: |
           gradle wrapper --gradle-version 8.4
 
       - name: Build Debug APK
         run: |
-          ./gradlew assembleDebug --stacktrace
+          chmod +x ./gradlew
+          ./gradlew assembleDebug --stacktrace --info
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
